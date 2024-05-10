@@ -1,119 +1,121 @@
 #!/bin/bash
 
-declare -A accounts
-headline() {
+# Array to store usernames and passwords
+usernames=()
+passwords=()
 
-	echo "             ==========WELCOME TO XYZ BANK==========="
+# Array to store corresponding account balances
+balances=()
 
+# Function to validate login credentials
+login() {
+    read -p "Enter username: " username
+    read -sp "Enter password: " password
+
+    echo
+
+    login_success=false
+
+    for ((i=0; i<${#usernames[@]}; i++)); do
+        if [[ "${usernames[$i]}" == "$username" && "${passwords[$i]}" == "$password" ]]; then
+            echo "Login successful. Welcome ${usernames[$i]}"
+            login_success=true
+            main_menu $i
+            break
+        fi
+    done
+
+    if [[ $login_success == false ]]; then
+        echo "Invalid username or password"
+        main
+    fi
 }
-create_user() {
-	clear
-	headline
-	echo "-------USER ACCOUNT CREATE-------"
-	read -p "Enter your username: " username
+# Function to create a new account
+create_account() {
 
-	if (( ${#accounts[$username]} !=0 ))
-	then
-	echo "
-	-------------------------------------------------
-	Username already exist. Please choose another one
-	-------------------------------------------------
-	"
-	else
-	read -s -p "Enter Password: " password
+    read -p "Choose a username: " new_username
+    read -sp "Choose a password: " new_password
+    echo
 
-	accounts[$username]=$password
-	clear
-	echo "
-	----------------------------------------------
-	Account created successfully. Now Login please
-	----------------------------------------------
-	"
-	return 1
-	fi
+    usernames+=("$new_username")
+    passwords+=("$new_password")
+    balances+=(0)
 
-
-}
-
-
-user_login() {
-
-	echo "Enter your username: "
-	read username
-	if (( ${#accounts[$username]} !=0 ))
-	then
-	echo "Enter password"
-	read -s password
-		if (( ${accounts[$username]} == $password ))
-		then
-		echo "Login successful. Welcome, $username"
-		after_login
-		else
-		echo "Incorrect password. Please try again"
-		return 1
-		fi
-	else
-	echo "Username not found. Please create an account"
-	return 1
-	fi
+    echo "Account created successfully for $new_username"
+    main
 }
 
-after_login() {
-while true
+# Function to check account details
+account_details() {
+    local index=$1
+    echo "Username: ${usernames[$index]}"
+    echo "Current Balance: ${balances[$index]}"
+}
 
-do
-echo "1. Deposit"
-echo "2. Withdraw"
-echo "3. Account Details"
-echo "4. Logout"
-read -p "Choose an option: " option
-if (($option == 1))
-then
-echo "Deposit"
-elif (($option == 2))
-then
-echo "Withdraw"
-elif (($option == 3))
-then
-echo "Account Details"
-elif (($option == 4))
-then
-echo "Logging out.."
-return 1
-else
-echo "Invalid option. Please try again."
-fi
-done
- }
+# Function to deposit money
+deposit() {
+    ((balances[$1] += $2))
+    echo "$2 deposited successfully. Your new balance is ${balances[$1]}"
+}
+# Function to withdraw money
+withdraw() {
+    if ((balances[$1] >= $2)); then
+        ((balances[$1] -= $2))
+        echo "$2 withdrawn successfully. Your new balance is ${balances[$1]}"
+    else
+        echo "Insufficient balance"
+        main_menu $1
+    fi
+}
+# Function to display the main menu
+main_menu() {
+    echo "Welcome ${usernames[$1]} to the Bank Management System"
+    echo "1. Account Details"
+    echo "2. Deposit"
+    echo "3. Withdraw"
+    echo "4. Logout"
 
+    read -p "Enter your choice: " choice
 
+    if [[ $choice == 1 ]]; then
+        account_details $1
+    elif [[ $choice == 2 ]]; then
+        read -p "Enter amount to deposit: " amount
+        deposit $1 $amount
+    elif [[ $choice == 3 ]]; then
+        read -p "Enter amount to withdraw: " amount
+        withdraw $1 $amount
+    elif [[ $choice == 4 ]]; then
+        echo "Logout Successful"
+        main
+    else
+        echo "Invalid choice. Please enter a number from 1 to 4."
+    fi
 
+    main_menu $1
+}
 
-#front page
-clear
-headline
+# Main function
+main() {
+    echo "Welcome to the Bank Management System"
+    echo "1. Login"
+    echo "2. Create Account"
+    echo "3. Exit"
 
-while true
-do
-echo "1. Login"
-echo "2. Create Account"
-echo "3. Exit"
-read -p "Choose an option: " option
+    read -p "Enter your choice: " option
 
-if (($option == 1))
-then
-	user_login
-elif (($option == 2))
-then
-	create_user
+    if [[ $option == 1 ]]; then
+        login
+    elif [[ $option == 2 ]]; then
+        create_account
+    elif [[ $option == 3 ]]; then
+        echo "Thank you for using our services. Goodbye!"
+        exit
+    else
+        echo "Invalid choice. Please enter a number from 1 to 3."
+        main
+    fi
+}
 
-elif (($option == 3))
-then
-	clear
-	echo "Thank you"
-	exit
-
-else
-	echo "Invalid option. Please try again"
-fi
-done
+# Run the main function
+main
